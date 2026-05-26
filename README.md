@@ -44,9 +44,9 @@ A complete end-to-end machine learning project that classifies patients into **L
 ## 📋 Table of Contents
 - [❓ Problem Statement](#-problem-statement)
 - [🎯 Approach](#-approach)
+- [🏗️ System Architecture](#️-system-architecture)
 - [✅ Solution](#-solution)
 - [📊 Dataset](#-dataset)
-- [🔄 Project Workflow](#-project-workflow)
 - [💡 Key Findings](#-key-findings)
 - [📈 Model Performance](#-model-performance)
 - [🛠 Tech Stack](#-tech-stack)
@@ -134,10 +134,11 @@ Built an interactive **Streamlit web app** with:
 
 ## 🏗️ System Architecture
 
-
+A visual roadmap of the model development journey — from baseline to winner:
 
 ![System Architecture](image/system_architecture.png)
 
+*Ten iterations of experimentation, each building on the last, culminating in the Optuna-tuned class-weighted XGBoost achieving 88% accuracy.*
 
 ---
 
@@ -214,32 +215,6 @@ The dataset contains patient records with **17 features** spanning multiple risk
 | 🔴 **High** | 102 | ~5% |
 
 > *This severe imbalance — only 5% High-risk — drove the need for SMOTE and class weighting.*
-
----
-
-## 🔄 Project Workflow
-
-```mermaid
-graph LR
-    A[📊 Raw Data] --> B[🔍 EDA]
-    B --> C[🛡️ Remove Leakage]
-    C --> D[⚖️ Handle Imbalance]
-    D --> E[🧪 Model Training]
-    E --> F[⚡ Optuna Tuning]
-    F --> G[📈 Evaluation]
-    G --> H[💾 Save Artifacts]
-    H --> I[🚀 Streamlit App]
-    I --> J[☁️ AWS Deployment]
-```
-
-### Step-by-Step Pipeline
-
-1. **🔍 EDA** — Distribution analysis, correlation heatmaps, countplots, KDE plots
-2. **🧹 Preprocessing** — LabelEncoder for target, one-hot encoding for categoricals, leak removal
-3. **⚖️ Class Imbalance** — SMOTE and class weighting (applied to training data only)
-4. **🧪 Model Comparison** — 6 different model configurations tested
-5. **⚡ Hyperparameter Tuning** — Optuna with TPE sampler, 40+ trials
-6. **🚀 Deployment** — Streamlit web app with Plotly visuals
 
 ---
 
