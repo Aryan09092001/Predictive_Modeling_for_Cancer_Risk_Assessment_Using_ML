@@ -5,6 +5,9 @@ A multi-class classification project that predicts cancer risk levels (**Low**, 
 ---
 
 ## 📋 Table of Contents
+- [Problem Statement](#-problem-statement)
+- [Approach](#-approach)
+- [Solution](#-solution)
 - [Overview](#-overview)
 - [Dataset](#-dataset)
 - [Project Workflow](#-project-workflow)
@@ -15,11 +18,112 @@ A multi-class classification project that predicts cancer risk levels (**Low**, 
 - [Installation & Setup](#-installation--setup)
 - [Running the App Locally](#-running-the-app-locally)
 - [Deployment on AWS EC2](#-deployment-on-aws-ec2)
-- [Alternative Deployment Options](#-alternative-deployment-options)
 - [Screenshots](#-screenshots)
 - [Future Improvements](#-future-improvements)
-- [Author](#-author)
-- [Disclaimer](#-disclaimer)
+
+
+---
+
+## ❓ Problem Statement
+
+Cancer is one of the leading causes of death globally, with early detection being a critical factor in successful treatment outcomes. However, identifying patients at high risk of developing cancer remains a significant challenge for healthcare systems due to:
+
+1. **Multiple Risk Factors:** Cancer risk is influenced by a complex combination of lifestyle, genetic, environmental, and demographic factors, making manual assessment difficult and inconsistent.
+
+2. **Class Imbalance:** In real-world medical datasets, high-risk patients are typically a small minority (~5% in this dataset), making it easy for traditional models to overlook them in favor of overall accuracy.
+
+3. **Cost of Misclassification:** Missing a high-risk patient (false negative) has far greater clinical consequences than a false alarm (false positive). Standard accuracy metrics fail to capture this asymmetry.
+
+4. **Lack of Accessible Tools:** Most predictive models exist only in research papers — they are not packaged as usable tools that healthcare professionals or patients can interact with.
+
+**The Challenge:** Build a machine learning system that can accurately classify patients into Low, Medium, and High risk categories — with **special emphasis on correctly identifying High-risk patients** — and deliver it as an accessible, interactive web application.
+
+---
+
+## 🎯 Approach
+
+The project follows a structured, end-to-end machine learning pipeline designed to address each aspect of the problem:
+
+### 1. **Understanding the Data**
+- Conducted thorough Exploratory Data Analysis (EDA) to understand feature distributions, correlations, and the severity of class imbalance
+- Identified which lifestyle and environmental factors most strongly correlate with high risk
+
+### 2. **Preventing Data Leakage**
+- Carefully audited features to remove **data leakage**:
+  - Dropped `Cancer_Type` (an outcome variable, not a predictor)
+  - Dropped `Overall_Risk_Score` (a precomputed score that essentially encodes the answer)
+- This ensures the model learns from genuine risk factors, not shortcuts
+
+### 3. **Handling Class Imbalance**
+- Applied **SMOTE (Synthetic Minority Over-sampling Technique)** to generate synthetic high-risk samples
+- Compared with **class weighting** in XGBoost as an alternative strategy
+- Both techniques were applied **only on training data** to prevent test-set contamination
+
+### 4. **Model Experimentation**
+- Tested multiple algorithms in a controlled, comparable way:
+  - Logistic Regression (baseline)
+  - Random Forest Classifier
+  - Random Forest + SMOTE
+  - XGBoost (baseline)
+  - Class-weighted XGBoost
+- Used **stratified train/test split** to preserve class proportions
+
+### 5. **Optimization with Optuna**
+- Employed **Optuna** with the TPE sampler for intelligent hyperparameter tuning
+- Optimized for **macro F1-score** and **recall on the High class** through cross-validation
+- Used **ImbPipeline** to integrate SMOTE inside CV folds, preventing leakage during tuning
+
+### 6. **Evaluation Strategy**
+- Evaluated with metrics suited for imbalanced classification:
+  - **Macro F1-score** (treats all classes equally)
+  - **Per-class precision and recall**
+  - **Confusion matrix** for detailed error analysis
+- Did NOT rely on raw accuracy alone (which would be misleading)
+
+### 7. **Deployment**
+- Built an **interactive Streamlit web app** with two modes (single patient and batch CSV upload)
+- Added **Plotly visualizations** (gauge charts, probability bars, distribution pies) for intuitive understanding
+- Packaged for **AWS EC2 deployment** with Docker support for portability
+
+---
+
+## ✅ Solution
+
+The final solution is a complete machine learning system consisting of three key components:
+
+### 1. **The Predictive Model**
+An **Optuna-tuned, class-weighted XGBoost classifier** trained on 17 carefully selected features (after removing leaky variables), achieving:
+
+| Metric | Result |
+|--------|--------|
+| Overall Accuracy | **88%** |
+| Macro F1-Score | **0.72** |
+| High-Risk Recall | **0.45** (vs. 0.05 baseline) |
+| Low-Risk Recall | **0.78** |
+| Medium-Risk Recall | **0.92** |
+
+The model successfully **9x'd the recall on the critical High-risk class** compared to a naive baseline, while maintaining strong overall accuracy.
+
+### 2. **The Interactive Web Application**
+A polished **Streamlit app** that lets users:
+- **Predict for individual patients** by entering 17 features in a clean sidebar form
+- **Batch process patients** by uploading a CSV file
+- **Visualize results** with gauge charts, probability distributions, and color-coded risk levels
+- **Get clinical interpretations** with appropriate follow-up recommendations
+- **Download batch predictions** as a CSV for further analysis
+
+### 3. **The Deployment Pipeline**
+A production-ready deployment setup with:
+- **`requirements.txt`** for reproducible Python environments
+- **`Dockerfile`** for containerized deployment
+- **Complete AWS EC2 deployment guide** with three options for keeping the app running (`nohup`, `tmux`, `systemd`)
+- **Alternative deployment paths** for Streamlit Cloud and AWS Elastic Beanstalk
+
+### Key Achievements
+✅ **Identified and removed data leakage** that would have produced misleadingly perfect scores  
+✅ **Improved minority class recall** by combining SMOTE, class weighting, and hyperparameter tuning  
+✅ **Built a production-ready app** with proper artifact versioning (model + label encoder + feature names saved consistently)  
+✅ **Documented the entire pipeline** for reproducibility and deployment
 
 ---
 
@@ -64,15 +168,15 @@ The strong class imbalance motivated the use of **SMOTE** and **class weighting*
 ### 2. Data Preprocessing
 - Encoded the `Risk_Level` target using `LabelEncoder`
 - Applied one-hot encoding for categorical features
-- **Removed leaky features:** `Cancer_Type` and `Overall_Risk_Score` (these directly encode the outcome and would inflate model performance unrealistically)
+- **Removed leaky features:** `Cancer_Type` and `Overall_Risk_Score`
 
 ### 3. Handling Class Imbalance
-- Applied **SMOTE (Synthetic Minority Over-sampling Technique)** on the training set only
+- Applied **SMOTE** on the training set only
 - Tested class weighting as an alternative in XGBoost
 - Compared performance with and without resampling
 
 ### 4. Model Development
-Tested multiple models with proper train/test split (stratified, 80/20):
+Tested multiple models with proper stratified 80/20 train/test split:
 - Logistic Regression
 - Random Forest Classifier
 - Random Forest + SMOTE
@@ -84,7 +188,7 @@ Tested multiple models with proper train/test split (stratified, 80/20):
 Used **Optuna** with the TPE sampler to search the hyperparameter space, optimizing macro-F1 score and High-class recall through cross-validation.
 
 ### 6. Deployment
-Built an interactive **Streamlit web app** with manual input and batch CSV prediction modes, including visualizations (gauge charts, probability bars, pie charts).
+Built an interactive **Streamlit web app** with manual input and batch CSV prediction modes, with visualizations like gauge charts, probability bars, and pie charts.
 
 ---
 
@@ -285,132 +389,6 @@ http://<your-ec2-public-ip>:8501
 
 🎉 Your app is now live!
 
-### Step 8: Keep the App Running 24/7 (Optional)
-
-The app stops when you close the SSH terminal. To keep it running permanently:
-
-**Option A: Using `nohup` (simplest)**
-
-```bash
-nohup streamlit run app.py --server.port=8501 --server.address=0.0.0.0 > streamlit.log 2>&1 &
-```
-
-You can now safely close the SSH connection — the app will keep running.
-
-**Option B: Using `tmux` (recommended)**
-
-```bash
-# Install tmux
-sudo apt install tmux -y
-
-# Start a new tmux session
-tmux new -s streamlit
-
-# Run the app inside the session
-streamlit run app.py --server.port=8501 --server.address=0.0.0.0
-
-# Detach from the session (app keeps running)
-# Press: Ctrl + B, then D
-
-# To reattach later
-tmux attach -t streamlit
-```
-
-**Option C: Using `systemd` (production-grade)**
-
-Create a systemd service file:
-
-```bash
-sudo nano /etc/systemd/system/streamlit.service
-```
-
-Paste the following (update paths to your username):
-
-```ini
-[Unit]
-Description=Streamlit Cancer Risk Predictor
-After=network.target
-
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=/home/ubuntu/Predictive_Modeling_for_Cancer_Risk_Assessment_Using_ML
-ExecStart=/home/ubuntu/Predictive_Modeling_for_Cancer_Risk_Assessment_Using_ML/venv/bin/streamlit run app.py --server.port=8501 --server.address=0.0.0.0
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Then enable and start the service:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable streamlit
-sudo systemctl start streamlit
-
-# Check status
-sudo systemctl status streamlit
-```
-
-The app now restarts automatically if it crashes or the server reboots.
-
-### Step 9: Stopping the App
-
-```bash
-# If using nohup
-pkill -f streamlit
-
-# If using tmux
-tmux kill-session -t streamlit
-
-# If using systemd
-sudo systemctl stop streamlit
-```
-
----
-
-## 🐳 Alternative Deployment Options
-
-### Option 1: Deploy with Docker
-
-```bash
-# Build the Docker image
-docker build -t cancer-risk-predictor .
-
-# Run the container
-docker run -p 8501:8501 cancer-risk-predictor
-```
-
-Access at `http://localhost:8501`.
-
-### Option 2: Streamlit Community Cloud (Free)
-
-1. Push this repo to GitHub
-2. Visit [share.streamlit.io](https://share.streamlit.io)
-3. Sign in with GitHub
-4. Click **"New app"** and select this repo
-5. Set the main file path to `app.py`
-6. Click **"Deploy"** — done in 1 minute!
-
-### Option 3: AWS Elastic Beanstalk
-
-For managed AWS deployment without manual server setup:
-
-```bash
-# Install EB CLI
-pip install awsebcli
-
-# Initialize EB application
-eb init -p python-3.11 cancer-risk-predictor
-
-# Create environment and deploy
-eb create cancer-risk-env
-
-# Open the deployed app
-eb open
-```
-
 ---
 
 ## 📸 Screenshots
@@ -445,18 +423,7 @@ To add screenshots:
 
 ---
 
-## 👨‍💻 Author
 
-**Aryan**  
-GitHub: [@Aryan09092001](https://github.com/Aryan09092001)
-
----
-
-## ⚠️ Disclaimer
-
-This project is for **educational purposes only** and should not be used as a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider for medical concerns. The predictions made by this model are based on a limited dataset and should not be relied upon for clinical decision-making.
-
----
 
 ## 📄 License
 
