@@ -132,6 +132,15 @@ Built an interactive **Streamlit web app** with:
 
 ---
 
+## 🏗️ System Architecture
+
+
+
+![System Architecture](image/system_architecture.png)
+
+
+---
+
 ## ✅ Solution
 
 A complete machine learning system consisting of three key components:
